@@ -46,6 +46,7 @@
   }
   .balance-card .label{font-size:0.75rem;color:var(--muted);}
   .balance-card .value{font-size:1.3rem;font-weight:700;margin-top:4px;}
+  .balance-card h3{font-size:0.75rem;color:var(--muted);margin:0;font-weight:600;}
   .cash .value{color:var(--accent2);}
   .gpay .value{color:var(--accent);}
 
@@ -111,6 +112,7 @@
     font-size:0.95rem;
     cursor:pointer;
   }
+  button:disabled{opacity:0.6;cursor:not-allowed;}
   button.secondary{background:var(--accent2);}
   button.export{background:#4d8dff;color:#fff;}
   button.danger{background:var(--danger);color:#fff;}
@@ -118,6 +120,15 @@
     width:auto;
     padding:6px 10px;
     font-size:0.75rem;
+    margin:0;
+  }
+  button.logout{
+    width:auto;
+    padding:8px 14px;
+    font-size:0.8rem;
+    background:var(--panel);
+    color:var(--text);
+    border:1px solid var(--border);
     margin:0;
   }
 
@@ -136,28 +147,144 @@
   .paid{color:var(--accent);}
   .actions-row{display:flex;gap:8px;margin-bottom:14px;}
   .actions-row button{margin-top:0;}
+  .sync-status{
+    font-size:0.75rem;
+    color:var(--muted);
+    text-align:center;
+    margin-bottom:10px;
+  }
+  .sync-status.online{color:var(--accent);}
+  .sync-status.offline{color:var(--danger);}
+
+  /* Login screen */
+  #loginScreen{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    min-height:70vh;
+    text-align:center;
+    gap:16px;
+  }
+  #loginScreen h1{font-size:1.6rem;}
+  #loginScreen p{color:var(--muted);font-size:0.9rem;max-width:280px;}
+  #googleLoginBtn{
+    width:auto;
+    padding:12px 24px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:#fff;
+    color:#1f1f1f;
+  }
+  #googleLoginBtn img{width:20px;height:20px;}
+
+  /* Top bar with user info + logout */
+  .topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:12px;
+    gap:10px;
+  }
+  .topbar .userinfo{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:0.85rem;
+    color:var(--muted);
+    overflow:hidden;
+  }
+  .topbar .userinfo img{
+    width:28px;height:28px;border-radius:50%;flex-shrink:0;
+  }
+  .topbar .userinfo span{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  #appContent{display:none;}
 </style>
 </head>
 <body>
-<label>Opening Cash</label>
-<input type="number" id="openingCash">
 
-<label>Opening GPay</label>
-<input type="number" id="openingGpay">
-<button onclick="saveOpeningBalance()">
-Save Opening Balance
-</button>
-<h1>Service Centre Ledger</h1>
-<div class="sub">Bank Balance &amp; Cash Tracker — Reload pannina data poidaadhu</div>
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <h1>Service Centre Ledger</h1>
+  <p>Cash &amp; GPay tracking app. Continue panna Google account use pannunga.</p>
+  <button id="googleLoginBtn">
+    <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="">
+    Sign in with Google
+  </button>
+  <div id="loginError" style="color:var(--danger);font-size:0.8rem;"></div>
+</div>
+
+<!-- APP CONTENT (shown after login) -->
+<div id="appContent">
+
+<div class="topbar">
+  <div class="userinfo">
+    <img id="userPhoto" src="" alt="">
+    <span id="userName"></span>
+  </div>
+  <button class="logout" id="logoutBtn">Logout</button>
+</div>
+
+<div class="sub">Bank Balance &amp; Cash Tracker — Cloud sync (Firebase) m&#2942;lam, data device maarinaalum poiidaadhu</div>
+
+<div class="sync-status" id="syncStatus">Connecting...</div>
+
+<div class="card">
+  <h2>Opening Balance</h2>
+  <div class="row">
+    <div>
+      <label>Opening Cash</label>
+      <input type="number" id="openingCash" placeholder="0" inputmode="decimal">
+    </div>
+    <div>
+      <label>Opening GPay</label>
+      <input type="number" id="openingGpay" placeholder="0" inputmode="decimal">
+    </div>
+  </div>
+  <button id="saveOpeningBtn">Save Opening Balance</button>
+</div>
 
 <div class="balances">
   <div class="balance-card cash">
     <div class="label">Cash in Hand (₹)</div>
-    <div class="value" id="cashTotal">0</div>
+    <div class="value" id="cashTotal">₹0.00</div>
   </div>
   <div class="balance-card gpay">
     <div class="label">GPay / Bank Balance (₹)</div>
-    <div class="value" id="gpayTotal">0</div>
+    <div class="value" id="gpayTotal">₹0.00</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Search &amp; Filter</h2>
+  <label>Search Customer</label>
+  <input type="text" id="searchCustomer" placeholder="Customer name search pannunga">
+  <div class="row">
+    <div>
+      <label>From Date</label>
+      <input type="date" id="fromDate">
+    </div>
+    <div>
+      <label>To Date</label>
+      <input type="date" id="toDate">
+    </div>
+  </div>
+</div>
+
+<div class="balances">
+  <div class="balance-card">
+    <h3>Total Pending (Due)</h3>
+    <div class="value" id="pendingTotal">₹0.00</div>
+  </div>
+  <div class="balance-card">
+    <h3>Total Profit (Service Charge)</h3>
+    <div class="value" id="profitTotal">₹0.00</div>
   </div>
 </div>
 
@@ -170,7 +297,9 @@ Save Opening Balance
 <!-- CUSTOMER TAB -->
 <div id="tab-customer">
   <div class="card">
-    <h2>New Customer Entry</h2>
+    <h2 id="custFormTitle">New Customer Entry</h2>
+    <input type="hidden" id="custEditId" value="">
+
     <label>Customer Name</label>
     <input type="text" id="custName" placeholder="Eg: Ramesh">
 
@@ -188,7 +317,7 @@ Save Opening Balance
 
     <div class="total-line">
       <span>Total Customer Should Pay</span>
-      <strong id="custTotal">₹0</strong>
+      <strong id="custTotal">₹0.00</strong>
     </div>
 
     <label>Customer Paid Now</label>
@@ -205,24 +334,27 @@ Save Opening Balance
 
     <div class="total-line">
       <span>Paid Now</span>
-      <strong id="custPaidNow">₹0</strong>
+      <strong id="custPaidNow">₹0.00</strong>
     </div>
     <div class="total-line">
       <span>Balance Due (Customer kitta varanum)</span>
-      <strong id="custDue" style="color:var(--danger)">₹0</strong>
+      <strong id="custDue" style="color:var(--danger)">₹0.00</strong>
     </div>
 
     <label>Note (Optional)</label>
     <input type="text" id="custNote" placeholder="Eg: Mobile recharge, ID card etc">
 
     <button id="addCustomerBtn">Save Customer Entry</button>
+    <button id="cancelCustomerEditBtn" class="secondary" style="display:none">Cancel Edit</button>
   </div>
 </div>
 
 <!-- FRIEND TAB -->
 <div id="tab-friend" style="display:none">
   <div class="card">
-    <h2>Friend Transfer</h2>
+    <h2 id="friendFormTitle">Friend Transfer</h2>
+    <input type="hidden" id="friendEditId" value="">
+
     <label>Friend Name</label>
     <input type="text" id="friendName" placeholder="Eg: Karthik">
 
@@ -245,6 +377,7 @@ Save Opening Balance
     <input type="text" id="friendNote" placeholder="Eg: Loan return">
 
     <button id="addFriendBtn">Save Friend Entry</button>
+    <button id="cancelFriendEditBtn" class="secondary" style="display:none">Cancel Edit</button>
   </div>
 </div>
 
@@ -287,29 +420,176 @@ Save Opening Balance
   </div>
 </div>
 
+</div><!-- /appContent -->
+
+<!-- Firebase SDKs (compat build = works with plain <script>, no module imports needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
 <script>
-const KEY = 'service_ledger_v2';
-
-function loadData(){
-  try{
-    const raw = localStorage.getItem(KEY);
-    if(raw) return JSON.parse(raw);
-  }catch(e){}
-  return {
-  openingCash:0,
-  openingGpay:0,
-  customers:[],
-  friends:[]
+// =====================================================
+// FIREBASE SETUP
+// =====================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyAjA-ZQ7s8dGd5fF_8vZC1vXyqx5O37btE",
+  authDomain: "veeran-tech-point-ledger.firebaseapp.com",
+  projectId: "veeran-tech-point-ledger",
+  storageBucket: "veeran-tech-point-ledger.firebasestorage.app",
+  messagingSenderId: "808382517090",
+  appId: "1:808382517090:web:6309303f71512db72aa63b"
 };
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Local in-memory cache. Firestore is the single source of truth.
+let data = {
+  openingCash: 0,
+  openingGpay: 0,
+  customers: [],  // each item: { id, date, name, particular, particularMode, charge, total, gpayPaid, cashPaid, due, note, createdAt }
+  friends: []     // each item: { id, date, name, direction, mode, amount, note, createdAt }
+};
+
+let currentUser = null;
+
+const syncStatusEl = document.getElementById('syncStatus');
+
+function setSyncStatus(text, cls){
+  syncStatusEl.textContent = text;
+  syncStatusEl.className = 'sync-status ' + (cls || '');
 }
 
-function saveData(){
-  localStorage.setItem(KEY, JSON.stringify(data));
+// =====================================================
+// AUTH - per-user data lives under users/{uid}/customers etc.
+// =====================================================
+function userCollection(name){
+  if(!currentUser) throw new Error('Not signed in');
+  return db.collection('users').doc(currentUser.uid).collection(name);
+}
+function userSettingsDoc(){
+  if(!currentUser) throw new Error('Not signed in');
+  return db.collection('users').doc(currentUser.uid).collection('settings').doc('balances');
 }
 
-let data = loadData();
+document.getElementById('googleLoginBtn').addEventListener('click', async ()=>{
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+  try{
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await auth.signInWithPopup(provider);
+  }catch(err){
+    console.error(err);
+    errEl.textContent = 'Login fail aachu: ' + err.message;
+  }
+});
 
-// ---------- Tabs ----------
+document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+  try{
+    detachListeners();
+    await auth.signOut();
+  }catch(err){
+    console.error(err);
+    alert('Logout aagala: ' + err.message);
+  }
+});
+
+auth.onAuthStateChanged(user=>{
+  if(user){
+    currentUser = user;
+
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appContent').style.display = 'block';
+
+    document.getElementById('userName').textContent = user.displayName || user.email || 'User';
+    const photoEl = document.getElementById('userPhoto');
+    if(user.photoURL){
+      photoEl.src = user.photoURL;
+      photoEl.style.display = 'block';
+    }else{
+      photoEl.style.display = 'none';
+    }
+
+    // reset local state for the new user
+    data = { openingCash:0, openingGpay:0, customers:[], friends:[] };
+    initListeners();
+  }else{
+    currentUser = null;
+    detachListeners();
+    data = { openingCash:0, openingGpay:0, customers:[], friends:[] };
+
+    document.getElementById('appContent').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+  }
+});
+
+// =====================================================
+// REALTIME LISTENERS - keep local `data` in sync with Firestore
+// =====================================================
+let custUnsub = null;
+let friendUnsub = null;
+let settingsUnsub = null;
+
+function detachListeners(){
+  if(custUnsub) { custUnsub(); custUnsub = null; }
+  if(friendUnsub) { friendUnsub(); friendUnsub = null; }
+  if(settingsUnsub) { settingsUnsub(); settingsUnsub = null; }
+}
+
+function initListeners(){
+  setSyncStatus('Connecting to cloud...', '');
+
+  // Settings (opening balances) - single doc per user
+  settingsUnsub = userSettingsDoc()
+    .onSnapshot(doc=>{
+      if(doc.exists){
+        const d = doc.data();
+        data.openingCash = d.openingCash || 0;
+        data.openingGpay = d.openingGpay || 0;
+        document.getElementById('openingCash').value = data.openingCash || '';
+        document.getElementById('openingGpay').value = data.openingGpay || '';
+      }
+      updateTotals();
+    }, err=>{
+      console.error(err);
+      setSyncStatus('Offline / Sync error', 'offline');
+    });
+
+  // Customers collection, ordered by createdAt
+  custUnsub = userCollection('customers').orderBy('createdAt','asc')
+    .onSnapshot(snapshot=>{
+      data.customers = snapshot.docs.map(doc=>{
+        const d = doc.data();
+        return { id: doc.id, ...d };
+      });
+      updateTotals();
+      render();
+      setSyncStatus('Synced ✓', 'online');
+    }, err=>{
+      console.error(err);
+      setSyncStatus('Offline / Sync error', 'offline');
+    });
+
+  // Friends collection, ordered by createdAt
+  friendUnsub = userCollection('friends').orderBy('createdAt','asc')
+    .onSnapshot(snapshot=>{
+      data.friends = snapshot.docs.map(doc=>{
+        const d = doc.data();
+        return { id: doc.id, ...d };
+      });
+      updateTotals();
+      render();
+      setSyncStatus('Synced ✓', 'online');
+    }, err=>{
+      console.error(err);
+      setSyncStatus('Offline / Sync error', 'offline');
+    });
+}
+
+// =====================================================
+// TABS
+// =====================================================
 document.querySelectorAll('.tab').forEach(tab=>{
   tab.addEventListener('click', ()=>{
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -321,10 +601,11 @@ document.querySelectorAll('.tab').forEach(tab=>{
   });
 });
 
-// ---------- Live calculation (customer form) ----------
+// =====================================================
+// LIVE CALCULATION (customer form)
+// =====================================================
 function recalcCustomerForm(){
   const particular = parseFloat(document.getElementById('custParticular').value)||0;
-  const particularMode = document.getElementById('custParticularMode').value;
   const charge = parseFloat(document.getElementById('custCharge').value)||0;
   const gpayPaid = parseFloat(document.getElementById('custGpayPaid').value)||0;
   const cashPaid = parseFloat(document.getElementById('custCashPaid').value)||0;
@@ -342,8 +623,10 @@ function recalcCustomerForm(){
   document.getElementById(id).addEventListener('input', recalcCustomerForm);
 });
 
-// ---------- Add customer entry ----------
-document.getElementById('addCustomerBtn').addEventListener('click', ()=>{
+// =====================================================
+// ADD / UPDATE CUSTOMER ENTRY
+// =====================================================
+document.getElementById('addCustomerBtn').addEventListener('click', async ()=>{
   const name = document.getElementById('custName').value.trim();
   const particular = parseFloat(document.getElementById('custParticular').value)||0;
   const particularMode = document.getElementById('custParticularMode').value;
@@ -351,114 +634,281 @@ document.getElementById('addCustomerBtn').addEventListener('click', ()=>{
   const gpayPaid = parseFloat(document.getElementById('custGpayPaid').value)||0;
   const cashPaid = parseFloat(document.getElementById('custCashPaid').value)||0;
   const note = document.getElementById('custNote').value.trim();
+  const editId = document.getElementById('custEditId').value;
 
   if(!name){ alert('Customer name podunga'); return; }
   if(particular===0 && charge===0){ alert('Particular amount illa Service Charge podunga'); return; }
 
   const total = particular + charge;
-  const due = total - (gpayPaid+cashPaid);
+  const due = total - (gpayPaid + cashPaid);
 
-  data.customers.push({
-    date: new Date().toLocaleString('en-IN'),
-    name, particular, charge, total, gpayPaid, cashPaid, due, note, particularMode
-  });
-  saveData();
+  const btn = document.getElementById('addCustomerBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
 
-  // reset form
-  ['custName','custParticular','custCharge','custGpayPaid','custCashPaid','custNote','custParticularMode'].forEach(id=>{
-    document.getElementById(id).value='';
-  });
-  recalcCustomerForm();
-  updateTotals();
-  render();
-  alert('Customer entry save aagiduchu!');
+  try{
+    if(editId){
+      // Update existing doc, keep original date/createdAt
+      await userCollection('customers').doc(editId).update({
+        name, particular, particularMode, charge, total, gpayPaid, cashPaid, due, note
+      });
+    }else{
+      await userCollection('customers').add({
+        date: new Date().toLocaleString('en-IN'),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        name, particular, particularMode, charge, total, gpayPaid, cashPaid, due, note
+      });
+    }
+
+    resetCustomerForm();
+  }catch(err){
+    console.error(err);
+    alert('Save aagala. Internet check pannunga. (' + err.message + ')');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Save Customer Entry';
+  }
 });
 
-// ---------- Add friend entry ----------
-document.getElementById('addFriendBtn').addEventListener('click', ()=>{
+function resetCustomerForm(){
+  ['custName','custParticular','custCharge','custGpayPaid','custCashPaid','custNote'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  document.getElementById('custParticularMode').value='gpay';
+  document.getElementById('custEditId').value='';
+  document.getElementById('custFormTitle').textContent = 'New Customer Entry';
+  document.getElementById('addCustomerBtn').textContent = 'Save Customer Entry';
+  document.getElementById('cancelCustomerEditBtn').style.display='none';
+  recalcCustomerForm();
+}
+
+document.getElementById('cancelCustomerEditBtn').addEventListener('click', resetCustomerForm);
+
+// =====================================================
+// ADD / UPDATE FRIEND ENTRY
+// =====================================================
+document.getElementById('addFriendBtn').addEventListener('click', async ()=>{
   const name = document.getElementById('friendName').value.trim();
   const direction = document.getElementById('friendDirection').value;
   const mode = document.getElementById('friendMode').value;
   const amount = parseFloat(document.getElementById('friendAmount').value)||0;
   const note = document.getElementById('friendNote').value.trim();
+  const editId = document.getElementById('friendEditId').value;
 
   if(!name){ alert('Friend name podunga'); return; }
   if(amount<=0){ alert('Amount podunga'); return; }
 
-  data.friends.push({
-    date: new Date().toLocaleString('en-IN'),
-    name, direction, mode, amount, note
-  });
-  saveData();
+  const btn = document.getElementById('addFriendBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
 
-  ['friendName','friendAmount','friendNote'].forEach(id=>document.getElementById(id).value='');
-  updateTotals();
-  render();
-  alert('Friend entry save aagiduchu!');
-});
-
-// ---------- Delete entry ----------
-function deleteCustomer(idx){
-  if(!confirm('Delete pannattuma?')) return;
-  data.customers.splice(idx,1);
-  saveData(); updateTotals(); render();
-}
-function deleteFriend(idx){
-  if(!confirm('Delete pannattuma?')) return;
-  data.friends.splice(idx,1);
-  saveData(); updateTotals(); render();
-}
-
-// ---------- Totals calculation ----------
-function updateTotals(){
-  let cash=data.openingCash||0;
-  let gpay=data.openingGpay||0;
-
-  data.customers.forEach(c=>{
-
-    if(c.particularMode==="cash"){
-        cash -= c.particular;
+  try{
+    if(editId){
+      await userCollection('friends').doc(editId).update({
+        name, direction, mode, amount, note
+      });
     }else{
-        gpay -= c.particular;
+      await userCollection('friends').add({
+        date: new Date().toLocaleString('en-IN'),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        name, direction, mode, amount, note
+      });
     }
 
-    cash += c.cashPaid;
-    gpay += c.gpayPaid;
+    resetFriendForm();
+  }catch(err){
+    console.error(err);
+    alert('Save aagala. Internet check pannunga. (' + err.message + ')');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Save Friend Entry';
+  }
+});
+
+function resetFriendForm(){
+  ['friendName','friendAmount','friendNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('friendDirection').value='sent';
+  document.getElementById('friendMode').value='gpay';
+  document.getElementById('friendEditId').value='';
+  document.getElementById('friendFormTitle').textContent = 'Friend Transfer';
+  document.getElementById('addFriendBtn').textContent = 'Save Friend Entry';
+  document.getElementById('cancelFriendEditBtn').style.display='none';
+}
+
+document.getElementById('cancelFriendEditBtn').addEventListener('click', resetFriendForm);
+
+// =====================================================
+// DELETE ENTRIES
+// =====================================================
+async function deleteCustomer(id){
+  if(!confirm('Delete pannattuma?')) return;
+  try{
+    await userCollection('customers').doc(id).delete();
+  }catch(err){
+    console.error(err);
+    alert('Delete aagala. (' + err.message + ')');
+  }
+}
+
+async function deleteFriend(id){
+  if(!confirm('Delete pannattuma?')) return;
+  try{
+    await userCollection('friends').doc(id).delete();
+  }catch(err){
+    console.error(err);
+    alert('Delete aagala. (' + err.message + ')');
+  }
+}
+
+// =====================================================
+// EDIT ENTRIES (load into form, keep doc id for update)
+// =====================================================
+function editCustomer(id){
+  const c = data.customers.find(x=>x.id===id);
+  if(!c) return;
+
+  document.getElementById('custName').value = c.name;
+  document.getElementById('custParticular').value = c.particular;
+  document.getElementById('custCharge').value = c.charge;
+  document.getElementById('custGpayPaid').value = c.gpayPaid;
+  document.getElementById('custCashPaid').value = c.cashPaid;
+  document.getElementById('custNote').value = c.note || '';
+  document.getElementById('custParticularMode').value = c.particularMode || 'gpay';
+  document.getElementById('custEditId').value = c.id;
+
+  document.getElementById('custFormTitle').textContent = 'Edit Customer Entry';
+  document.getElementById('addCustomerBtn').textContent = 'Update Customer Entry';
+  document.getElementById('cancelCustomerEditBtn').style.display='block';
+
+  recalcCustomerForm();
+  document.querySelector('[data-tab="customer"]').click();
+}
+
+function editFriend(id){
+  const f = data.friends.find(x=>x.id===id);
+  if(!f) return;
+
+  document.getElementById('friendName').value = f.name;
+  document.getElementById('friendDirection').value = f.direction;
+  document.getElementById('friendMode').value = f.mode;
+  document.getElementById('friendAmount').value = f.amount;
+  document.getElementById('friendNote').value = f.note || '';
+  document.getElementById('friendEditId').value = f.id;
+
+  document.getElementById('friendFormTitle').textContent = 'Edit Friend Transfer';
+  document.getElementById('addFriendBtn').textContent = 'Update Friend Entry';
+  document.getElementById('cancelFriendEditBtn').style.display='block';
+
+  document.querySelector('[data-tab="friend"]').click();
+}
+
+// =====================================================
+// TOTALS CALCULATION (Cash / GPay / Pending / Profit)
+// =====================================================
+function updateTotals(){
+  let cash = data.openingCash || 0;
+  let gpay = data.openingGpay || 0;
+  let pending = 0;
+  let profit = 0;
+
+  data.customers.forEach(c=>{
+    // The amount we paid out on the customer's behalf (particular) leaves
+    // from whichever account it was paid from.
+    if(c.particularMode === 'cash'){
+      cash -= c.particular;
+    }else{
+      gpay -= c.particular;
+    }
+
+    // Whatever the customer pays us now comes in via cash/gpay.
+    cash += c.cashPaid || 0;
+    gpay += c.gpayPaid || 0;
+
+    // Pending = total outstanding due across all customers
+    if(c.due > 0) pending += c.due;
+
+    // Profit = sum of service charges
+    profit += c.charge || 0;
   });
 
   data.friends.forEach(f=>{
-    const sign = f.direction==='sent' ? -1 : 1;
-    if(f.mode==='cash') cash += sign*f.amount;
-    else gpay += sign*f.amount;
+    const sign = f.direction === 'sent' ? -1 : 1;
+    if(f.mode === 'cash') cash += sign * f.amount;
+    else gpay += sign * f.amount;
   });
 
   document.getElementById('cashTotal').textContent = '₹'+cash.toFixed(2);
   document.getElementById('gpayTotal').textContent = '₹'+gpay.toFixed(2);
+  document.getElementById('pendingTotal').textContent = '₹'+pending.toFixed(2);
+  document.getElementById('profitTotal').textContent = '₹'+profit.toFixed(2);
 }
 
-// ---------- Render tables ----------
+// =====================================================
+// SEARCH / DATE FILTER
+// =====================================================
+function parseEntryDate(dateStr){
+  // dateStr is from toLocaleString('en-IN'), eg "15/6/2026, 10:30:00 am"
+  // Build a Date object from the dd/mm/yyyy portion for comparison.
+  if(!dateStr) return null;
+  const datePart = dateStr.split(',')[0].trim();
+  const parts = datePart.split('/');
+  if(parts.length !== 3) return null;
+  const [d, m, y] = parts.map(p=>parseInt(p,10));
+  if(!d || !m || !y) return null;
+  return new Date(y, m-1, d);
+}
+
+function getFilteredCustomers(){
+  const search = document.getElementById('searchCustomer').value.trim().toLowerCase();
+  const fromVal = document.getElementById('fromDate').value;
+  const toVal = document.getElementById('toDate').value;
+
+  const fromDate = fromVal ? new Date(fromVal+'T00:00:00') : null;
+  const toDate = toVal ? new Date(toVal+'T23:59:59') : null;
+
+  return data.customers.filter(c=>{
+    if(search && !(c.name||'').toLowerCase().includes(search)) return false;
+
+    if(fromDate || toDate){
+      const entryDate = parseEntryDate(c.date);
+      if(entryDate){
+        if(fromDate && entryDate < fromDate) return false;
+        if(toDate && entryDate > toDate) return false;
+      }
+    }
+    return true;
+  });
+}
+
+['searchCustomer','fromDate','toDate'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', render);
+});
+
+// =====================================================
+// RENDER TABLES
+// =====================================================
 function render(){
+  const filteredCustomers = getFilteredCustomers();
+
   const custBody = document.querySelector('#customerTable tbody');
   custBody.innerHTML='';
-  document.getElementById('custEmpty').style.display = data.customers.length? 'none':'block';
-  data.customers.forEach((c,idx)=>{
+  document.getElementById('custEmpty').style.display = filteredCustomers.length ? 'none' : 'block';
+
+  filteredCustomers.forEach(c=>{
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${c.date}</td>
-      <td>${c.name}</td>
-      <td class="amount">₹${c.particular.toFixed(2)}</td>
-      <td class="amount">₹${c.charge.toFixed(2)}</td>
-      <td class="amount">₹${c.total.toFixed(2)}</td>
-      <td>₹${c.gpayPaid.toFixed(2)}</td>
-      <td>₹${c.cashPaid.toFixed(2)}</td>
-      <td class="${c.due>0?'pending':'paid'}">₹${c.due.toFixed(2)}</td>
-      <td>${c.note||'-'}</td>
+      <td>${escapeHtml(c.date)}</td>
+      <td>${escapeHtml(c.name)}</td>
+      <td class="amount">₹${(c.particular||0).toFixed(2)}</td>
+      <td class="amount">₹${(c.charge||0).toFixed(2)}</td>
+      <td class="amount">₹${(c.total||0).toFixed(2)}</td>
+      <td>₹${(c.gpayPaid||0).toFixed(2)}</td>
+      <td>₹${(c.cashPaid||0).toFixed(2)}</td>
+      <td class="${c.due>0?'pending':'paid'}">₹${(c.due||0).toFixed(2)}</td>
+      <td>${escapeHtml(c.note||'-')}</td>
       <td>
-        <button class="small"
-        onclick="editCustomer(${idx})">Edit</button>
-
-        <button class="small danger"
-        onclick="deleteCustomer(${idx})">X</button>
+        <button class="small" onclick="editCustomer('${c.id}')">Edit</button>
+        <button class="small danger" onclick="deleteCustomer('${c.id}')">X</button>
       </td>
     `;
     custBody.appendChild(tr);
@@ -466,51 +916,77 @@ function render(){
 
   const friendBody = document.querySelector('#friendTable tbody');
   friendBody.innerHTML='';
-  document.getElementById('friendEmpty').style.display = data.friends.length? 'none':'block';
-  data.friends.forEach((f,idx)=>{
+  document.getElementById('friendEmpty').style.display = data.friends.length ? 'none' : 'block';
+
+  data.friends.forEach(f=>{
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${f.date}</td>
-      <td>${f.name}</td>
-      <td>${f.direction==='sent'?'Sent (Out)':'Received (In)'}</td>
+      <td>${escapeHtml(f.date)}</td>
+      <td>${escapeHtml(f.name)}</td>
+      <td>${f.direction==='sent' ? 'Sent (Out)' : 'Received (In)'}</td>
       <td>${f.mode.toUpperCase()}</td>
-      <td class="amount">₹${f.amount.toFixed(2)}</td>
-      <td>${f.note||'-'}</td>
+      <td class="amount">₹${(f.amount||0).toFixed(2)}</td>
+      <td>${escapeHtml(f.note||'-')}</td>
       <td>
-      <button class="small"
-      onclick="editFriend(${idx})">
-      Edit
-      </button>
-
-      <button class="small danger"
-      onclick="deleteFriend(${idx})">
-      X
-      </button>
+        <button class="small" onclick="editFriend('${f.id}')">Edit</button>
+        <button class="small danger" onclick="deleteFriend('${f.id}')">X</button>
       </td>
     `;
     friendBody.appendChild(tr);
   });
 }
 
-// ---------- Export to Excel ----------
+function escapeHtml(str){
+  if(str === undefined || str === null) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+// =====================================================
+// OPENING BALANCE SAVE
+// =====================================================
+document.getElementById('saveOpeningBtn').addEventListener('click', async ()=>{
+  const openingCash = parseFloat(document.getElementById('openingCash').value)||0;
+  const openingGpay = parseFloat(document.getElementById('openingGpay').value)||0;
+
+  try{
+    await userSettingsDoc().set({
+      openingCash, openingGpay
+    }, { merge: true });
+  }catch(err){
+    console.error(err);
+    alert('Save aagala. (' + err.message + ')');
+  }
+});
+
+// =====================================================
+// EXPORT TO EXCEL
+// =====================================================
 document.getElementById('exportBtn').addEventListener('click', ()=>{
   const wb = XLSX.utils.book_new();
 
   const custData = data.customers.map(c=>({
     Date: c.date, Customer: c.name, 'Particular Amount': c.particular,
+    'Particular Mode': (c.particularMode||'').toUpperCase(),
     'Service Charge': c.charge, 'Total Amount': c.total,
     'GPay Paid': c.gpayPaid, 'Cash Paid': c.cashPaid, 'Due': c.due, Note: c.note
   }));
   const friendData = data.friends.map(f=>({
     Date: f.date, Friend: f.name,
-    Direction: f.direction==='sent'?'Sent (Out)':'Received (In)',
+    Direction: f.direction==='sent' ? 'Sent (Out)' : 'Received (In)',
     Mode: f.mode.toUpperCase(), Amount: f.amount, Note: f.note
   }));
 
-  const ws1 = XLSX.utils.json_to_sheet(custData.length?custData:[{Date:'',Customer:'',
-    'Particular Amount':'','Service Charge':'','Total Amount':'','GPay Paid':'','Cash Paid':'','Due':'',Note:''}]);
-  const ws2 = XLSX.utils.json_to_sheet(friendData.length?friendData:[{Date:'',Friend:'',
-    Direction:'',Mode:'',Amount:'',Note:''}]);
+  const ws1 = XLSX.utils.json_to_sheet(custData.length ? custData : [{
+    Date:'', Customer:'', 'Particular Amount':'', 'Particular Mode':'',
+    'Service Charge':'', 'Total Amount':'', 'GPay Paid':'', 'Cash Paid':'', 'Due':'', Note:''
+  }]);
+  const ws2 = XLSX.utils.json_to_sheet(friendData.length ? friendData : [{
+    Date:'', Friend:'', Direction:'', Mode:'', Amount:'', Note:''
+  }]);
 
   XLSX.utils.book_append_sheet(wb, ws1, 'Customer Service');
   XLSX.utils.book_append_sheet(wb, ws2, 'Friend Transfers');
@@ -519,82 +995,41 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   XLSX.writeFile(wb, `service_ledger_${today}.xlsx`);
 });
 
-// ---------- Clear all ----------
-document.getElementById('clearBtn').addEventListener('click', ()=>{
-  if(!confirm('Ella data um delete aagidum, confirm ah?')) return;
-  data = {customers:[], friends:[], openingCash:0, openingGpay:0};
-  saveData();
-  updateTotals();
-  render();
+// =====================================================
+// CLEAR ALL DATA
+// =====================================================
+document.getElementById('clearBtn').addEventListener('click', async ()=>{
+  if(!confirm('Ella data um delete aagidum (cloud-la irundhum), confirm ah?')) return;
+
+  try{
+    setSyncStatus('Clearing...', '');
+
+    const custSnap = await userCollection('customers').get();
+    const friendSnap = await userCollection('friends').get();
+
+    const batch = db.batch();
+    custSnap.forEach(doc=>batch.delete(doc.ref));
+    friendSnap.forEach(doc=>batch.delete(doc.ref));
+    batch.set(userSettingsDoc(), { openingCash:0, openingGpay:0 });
+
+    await batch.commit();
+  }catch(err){
+    console.error(err);
+    alert('Clear aagala. (' + err.message + ')');
+  }
 });
 
-// ---------- Init ----------
-updateTotals();
-render();
-function editCustomer(idx){
-
- const c = data.customers[idx];
-
- document.getElementById('custName').value=c.name;
- document.getElementById('custParticular').value=c.particular;
- document.getElementById('custCharge').value=c.charge;
- document.getElementById('custGpayPaid').value=c.gpayPaid;
- document.getElementById('custCashPaid').value=c.cashPaid;
- document.getElementById('custNote').value=c.note;
- document.getElementById('custParticularMode').value=c.particularMode;
-
- data.customers.splice(idx,1);
-
- saveData();
- updateTotals();
- render();
-
- recalcCustomerForm();
-
- document.querySelector(
- '[data-tab="customer"]'
- ).click();
-}
-function editFriend(idx){
-
- const f=data.friends[idx];
-
- document.getElementById('friendName').value=f.name;
- document.getElementById('friendDirection').value=f.direction;
- document.getElementById('friendMode').value=f.mode;
- document.getElementById('friendAmount').value=f.amount;
- document.getElementById('friendNote').value=f.note;
-
- data.friends.splice(idx,1);
-
- saveData();
- updateTotals();
- render();
-
- document.querySelector(
- '[data-tab="friend"]'
- ).click();
-}
-localStorage.setItem(
- 'service_ledger_backup',
- JSON.stringify(data)
-);
-function saveOpeningBalance(){
-
- data.openingCash =
- parseFloat(document.getElementById("openingCash").value)||0;
-
- data.openingGpay =
- parseFloat(document.getElementById("openingGpay").value)||0;
-
- saveData();
- updateTotals();
-}
+// =====================================================
+// INIT
+// =====================================================
+recalcCustomerForm();
 </script>
+
 <script>
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js');
+  navigator.serviceWorker.register('service-worker.js').catch(()=>{});
 }
 </script>
+
 </body>
 </html>
